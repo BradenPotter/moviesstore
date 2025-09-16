@@ -18,7 +18,7 @@ def index(request):
 def show(request, id):
     movie = Movie.objects.get(id=id)
     user = request.user if request.user.is_authenticated else None
-    reviews_qs = Review.objects.filter(movie=movie).select_related('user')
+    reviews_qs = Review.objects.filter(movie=movie, reported=False).select_related('user')
     reviews_qs = reviews_qs.annotate(like_count=Count('likes', distinct=True))
     if user:
         reviews_qs = reviews_qs.annotate(
@@ -74,7 +74,7 @@ def delete_review(request, id, review_id):
 
 def top_reviews(request):
     user = request.user if request.user.is_authenticated else None
-    reviews_qs = Review.objects.select_related('user', 'movie').annotate(like_count=Count('likes', distinct=True))
+    reviews_qs = Review.objects.select_related('user', 'movie').filter(reported=False).annotate(like_count=Count('likes', distinct=True))
     if user:
         reviews_qs = reviews_qs.annotate(
             liked_by_me=Exists(
@@ -98,4 +98,13 @@ def like_review(request, review_id):
 def unlike_review(request, review_id):
     review = get_object_or_404(Review, id=review_id)
     ReviewLike.objects.filter(review=review, user=request.user).delete()
+    return redirect('movies.show', id=review.movie.id)
+
+@login_required
+def report_review(request, review_id):
+    review = get_object_or_404(Review, id=review_id)
+    if request.user == review.user:
+        return redirect('movies.show', id=review.movie.id)
+    review.reported = True
+    review.save(update_fields=['reported'])
     return redirect('movies.show', id=review.movie.id)
