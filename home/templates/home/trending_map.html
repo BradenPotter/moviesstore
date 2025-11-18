@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+<div class="container py-4">
+    <h2>Trending Movies Map</h2>
+    <div id="map" style="height: 600px;" class="my-3"></div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script>
+    var map = L.map('map').setView([51.505, -0.09], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
+    fetch('{% url "cart.trending_geojson" %}')
+        .then(r => r.json())
+        .then(geo => {
+            const layer = L.geoJSON(geo, {
+                pointToLayer: (f, latlng) => L.marker(latlng),
+                onEachFeature: (f, layer) => {
+                    const p = f.properties || {};
+                    layer.bindPopup(`<b>${p.topMovie || 'N/A'}</b><br>${p.region || ''}<br>Purchases: ${p.count || 0}`);
+                }
+            });
+            layer.addTo(map);
+            try {map.fitBounds(layer.getBounds(), {maxZoom: 6 }); } catch (e) {}
+        });
+</script>
+{% endblock content %}

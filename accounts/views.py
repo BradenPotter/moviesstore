@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.contrib.auth import login as auth_login, authenticate, logout as auth_logout
-from .forms import CustomUserCreationForm, CustomErrorList
+from .forms import SignupForm, CustomErrorList
 from django.shortcuts import redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
@@ -29,20 +29,26 @@ def signup(request):
     template_data['title'] = 'Sign Up'
 
     if request.method == 'GET':
-        template_data['form'] = CustomUserCreationForm()
+        template_data['form'] = SignupForm()
         return render(request, 'accounts/signup.html', {'template_data': template_data})
     elif request.method == 'POST':
-        form = CustomUserCreationForm(request.POST, error_class=CustomErrorList)
+        form = SignupForm(request.POST, error_class=CustomErrorList)
         if form.is_valid():
-            form.save()
+            user = form.save()
+            profile = user.profile
+            profile.country = form.cleaned_data['country']
+            profile.region = form.cleaned_data['region']
+            profile.save()
             return redirect('accounts.login')
         else:
             template_data['form'] = form
             return render(request, 'accounts/signup.html', {'template_data': template_data})
+        
 
 @login_required
 def orders(request):
     template_data = {}
     template_data['title'] = 'Orders'
     template_data['orders'] = request.user.order_set.all()
-    return render(request, 'accounts/orders.html', {'template_data': template_data})
+    return render(request, 'accounts/orders.html',
+        {'template_data': template_data})
