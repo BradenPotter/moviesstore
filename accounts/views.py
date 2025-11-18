@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.contrib.auth import login as auth_login, authenticate, logout as auth_logout
-from .forms import SignupForm, CustomErrorList
+from .forms import SignupForm, CustomErrorList, ProfileForm
 from django.shortcuts import redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
@@ -52,3 +52,23 @@ def orders(request):
     template_data['orders'] = request.user.order_set.all()
     return render(request, 'accounts/orders.html',
         {'template_data': template_data})
+
+@login_required
+def profile(request):
+    template_data = {}
+    template_data['title'] = 'Profile'
+    profile = request.user.profile
+    
+    if request.method == 'POST':
+        form = ProfileForm(request.POST, request.FILES, instance=profile)
+        if form.is_valid():
+            form.save()
+            template_data['success'] = 'Profile picture updated successfully!'
+            template_data['form'] = ProfileForm(instance=profile)
+        else:
+            template_data['form'] = form
+    else:
+        template_data['form'] = ProfileForm(instance=profile)
+    
+    template_data['profile'] = profile
+    return render(request, 'accounts/profile.html', {'template_data': template_data})

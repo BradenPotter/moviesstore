@@ -4,6 +4,7 @@ from django.utils.safestring import mark_safe
 from django.contrib.auth.models import User
 from django import forms
 from django_countries.fields import CountryField
+from .models import Profile
 
 class CustomErrorList(ErrorList):
     def __str__(self):
@@ -51,3 +52,12 @@ class SignupForm(UserCreationForm):
         super().__init__(*args, **kwargs)
         for name, field in self.fields.items():
             field.widget.attrs.update({"class": "form-control"})
+
+
+class ProfileForm(forms.ModelForm):
+    class Meta:
+        model = Profile
+        fields = ['profile_picture']
+        widgets = {
+            'profile_picture': forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/*'})
+        }
